@@ -21,7 +21,7 @@ support for Arabic and Urdu).
 
 ## Getting Started
 
-Requires Node.js 20+.
+Requires Node.js 26 (see `.nvmrc`).
 
 ```bash
 npm ci            # install dependencies
