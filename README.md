@@ -1,73 +1,69 @@
-# React + TypeScript + Vite
+# chemistry lab
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive chemistry learning web app for school-level students — a pure frontend
+single-page application with no backend.
 
-Currently, two official plugins are available:
+The app offers 10 learning modules (matter, atoms, periodic table, bonds, formulas,
+reactions, pH, separation, energy, and the mole), each with 3 learning steps, quiz
+questions, and an interactive lab. On top of that: a glossary, a mistake-review mode, and
+an exam mode. Gamification through XP, levels, and progress tracking — all persisted in
+`localStorage`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The UI language is German by default, with translations into 20 languages (including RTL
+support for Arabic and Urdu).
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React 19 + TypeScript** (strict mode), built with **Vite 7**
+- **react-router 7** with `HashRouter` (works on any static host without server rewrites)
+- **Tailwind CSS 3.4** + **shadcn/ui** (Radix primitives)
+- **lucide-react** icons, **recharts**, **react-hook-form** / **zod**
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Requires Node.js 20+.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm ci            # install dependencies
+npm run dev       # dev server on http://localhost:3000
+npm run build     # type-check + production build to dist/
+npm run preview   # preview the production build locally
+npm run lint      # ESLint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Docker
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+A multi-stage `Dockerfile` builds the app and serves it via nginx:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+docker build -t chemistry-lab .
+docker run -p 8080:80 chemistry-lab
+# open http://localhost:8080
 ```
+
+## CI/CD (GitHub Actions)
+
+- **Push to `main`** — builds the Docker image as a verification check (no push).
+- **Tag push (`v*`)** — builds the image and pushes it to the GitHub Container Registry
+  (`ghcr.io/<owner>/chemistry-lab`) with the tag name and `latest` as image tags.
+
+## Project Structure
+
+```
+src/
+  pages/          route pages (home, module, glossary, review, exam, labs)
+  components/     layout, quiz, shared components, ui/ (shadcn), labs/ (10 labs)
+  data/           module metadata and lab content
+  hooks/          progress (localStorage), i18n data
+  i18n/           i18n provider + 20 locale files (de.json is the reference)
+  lib/            utilities (cn)
+```
+
+All visible text goes through the i18n system (`t('key')`); progress is stored in
+`localStorage`. See `AGENTS.md` for detailed conventions.
+
+## Deployment
+
+`npm run build` produces static files in `dist/`. Thanks to `base: './'` and
+`HashRouter`, the build runs on any static host or sub-path without server configuration —
+or simply use the Docker image above.
