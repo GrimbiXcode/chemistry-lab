@@ -1,0 +1,9 @@
+services:
+  chemistry-lab:
+    # Lokaler Build aus dem Repo; alternativ das vorgefertigte Image aus GHCR:
+    # image: ghcr.io/grimbixcode/chemistry-lab:latest
+    build: .
+    container_name: chemistry-lab
+    ports:
+      - "8080:80"
+    restart: unless-stopped
