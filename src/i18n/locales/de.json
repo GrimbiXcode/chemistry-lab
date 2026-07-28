@@ -1295,5 +1295,16 @@
  "tp.87.term": "Stoffmenge",
  "tp.88.match": "Avogadro-Konstante",
  "tp.88.term": "Avogadro-Konstante",
- "ui.nav.home": "Start"
+ "ui.nav.home": "Start",
+ "disclaimer.title": "Disclaimer",
+ "disclaimer.intro": "Legal notice and liability information for this website.",
+ "disclaimer.hobby.title": "A hobby project",
+ "disclaimer.hobby.text": "chemistry lab is a private, non-commercial hobby project. It is built and maintained in my spare time, without any commercial intent or professional editorial process.",
+ "disclaimer.content.title": "Content not verified",
+ "disclaimer.content.text": "None of the content on this site (learning modules, quizzes, interactive labs, glossary) has ever been reviewed or verified by teachers, chemists, or any other subject-matter experts. It may contain errors, inaccuracies, or oversimplifications. Please do not rely on it as your sole source for learning chemistry.",
+ "disclaimer.liability.title": "No liability",
+ "disclaimer.liability.text": "All information is provided \"as is\", without any warranty of correctness, completeness, or fitness for a particular purpose. I accept no liability for any damages or disadvantages arising from the use of this website or its content.",
+ "disclaimer.feedback.title": "Feedback welcome",
+ "disclaimer.feedback.text": "If you are a teacher, chemist, or simply enjoyed this site and have suggestions for improvement, I would love to hear from you. Please open an issue in the GitHub repository:",
+ "disclaimer.feedback.link": "Open an issue on GitHub"
 }

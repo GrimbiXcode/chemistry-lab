@@ -103,6 +103,13 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 pb-20">{children}</main>
+      <footer className="border-t border-slate-800 py-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-center px-4">
+          <Link to="/disclaimer" className="text-sm font-semibold text-slate-500 transition hover:text-slate-300">
+            {t('disclaimer.title')}
+          </Link>
+        </div>
+      </footer>
     </div>
   )
 }

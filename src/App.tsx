@@ -6,6 +6,7 @@ import Review from './pages/Review'
 import Exam from './pages/Exam'
 import Labs from './pages/Labs'
 import LabPage from './pages/LabPage'
+import Disclaimer from './pages/Disclaimer'
 import { I18nProvider } from './i18n'
 
 function I18nProviderWithOutlet() {
@@ -25,6 +26,7 @@ const pageRoutes = (
     <Route path="pruefung" element={<Exam />} />
     <Route path="labore" element={<Labs />} />
     <Route path="labor/:id" element={<LabPage />} />
+    <Route path="disclaimer" element={<Disclaimer />} />
   </>
 )
 
