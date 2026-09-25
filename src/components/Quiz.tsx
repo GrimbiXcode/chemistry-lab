@@ -2,29 +2,11 @@ import { useMemo, useState } from 'react'
 import type { QuizQuestion } from '@/data/appData'
 import { useProgress, readProgress } from '@/hooks/useProgress'
 import { useI18n } from '@/i18n'
-
-/** Deterministisches Mischen pro Frage: Reihenfolge variiert, bleibt aber beim Wiederholen stabil. */
-export function shuffledOptions(q: QuizQuestion, tfLabels?: [string, string]): { text: string; correct: boolean }[] {
-  const opts = q.type === 'tf' ? (tfLabels ?? ['Richtig', 'Falsch']) : q.options!
-  const mapped = opts.map((text, i) => ({
-    text,
-    correct: q.type === 'tf' ? (i === 0) === (q.correct === true) : i === q.correct,
-  }))
-  let seed = 0
-  for (const ch of q.id) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0
-  const a = [...mapped]
-  for (let i = a.length - 1; i > 0; i--) {
-    seed = (seed * 1664525 + 1013904223) >>> 0
-    const j = seed % (i + 1)
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
+import { shuffledOptions } from '@/lib/quiz'
 
 export default function Quiz({ questions, color, completionNote }: { questions: QuizQuestion[]; color: string; completionNote?: string }) {
   const { t, dict } = useI18n()
   const { progress, markQuestionCorrect, markQuestionWrong } = useProgress(dict)
-  const tfLabels: [string, string] = [t('quiz.tf.true'), t('quiz.tf.false')]
   // Wiedereinstieg: direkt bei der ersten noch nicht gelösten Frage weitergehen
   const [idx, setIdx] = useState(() => {
     const first = questions.findIndex((q) => !progress.correctQuestions.includes(q.id))
@@ -35,7 +17,8 @@ export default function Quiz({ questions, color, completionNote }: { questions: 
   const [hintLevel, setHintLevel] = useState(0)
 
   const q = questions[idx]
-  const options = useMemo(() => (q ? shuffledOptions(q, tfLabels) : []), [q, t])
+  // t wechselt mit der Sprache – dann werden auch die Richtig/Falsch-Labels neu gebaut.
+  const options = useMemo(() => (q ? shuffledOptions(q, [t('quiz.tf.true'), t('quiz.tf.false')]) : []), [q, t])
   const answered = pickedIdx !== null
   const isCorrect = pickedIdx !== null && options[pickedIdx]?.correct === true
   const alreadyKnown = q !== undefined && progress.correctQuestions.includes(q.id)
@@ -83,7 +66,7 @@ export default function Quiz({ questions, color, completionNote }: { questions: 
     <div className="space-y-4">
       <div className="flex items-center justify-between text-sm text-slate-400">
         <span>{t('quiz.questionOf', { i: idx + 1, n: questions.length })}</span>
-        <div className="flex gap-1">
+        <div className="flex gap-1" aria-hidden="true">
           {questions.map((_, i) => (
             <span key={i} className={`h-2 w-6 rounded-full ${i < idx ? 'bg-emerald-500' : i === idx ? `bg-gradient-to-r ${color}` : 'bg-slate-700'}`} />
           ))}

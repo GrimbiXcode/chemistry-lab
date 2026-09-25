@@ -14,18 +14,29 @@ interface Segment {
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-function splitIntoSegments(text: string, patterns: { match: string; term: string }[], byName: Map<string, GlossaryEntry>): Segment[] {
-  // Manuelle Muster: exakte Suche. Glossar-Begriffe: Wortgrenzen + case-insensitive,
-  // damit sie auch in anderen Wortformen/Schreibweisen erkannt werden.
-  const glossaryMatchers = [...byName.keys()]
+interface GlossaryMatcher {
+  term: string
+  re: RegExp
+}
+
+/** Glossar-Begriffe: Wortgrenzen + kurze Flexionsendung (Plural -s/-e/-n etc.), case-insensitive. */
+function buildGlossaryMatchers(byName: Map<string, GlossaryEntry>): GlossaryMatcher[] {
+  return [...byName.keys()]
     .filter((term) => term.length > 2)
     .map((term) => ({
       term,
-      // Wortgrenzen + kurze Flexionsendung (Plural -s/-e/-n etc.), case-insensitive.
       re: new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(term)}[\\p{L}]{0,2}(?![\\p{L}\\p{N}])`, 'iu'),
     }))
     .sort((a, b) => b.term.length - a.term.length)
+}
 
+function splitIntoSegments(
+  text: string,
+  patterns: { match: string; term: string }[],
+  glossaryMatchers: GlossaryMatcher[],
+  byName: Map<string, GlossaryEntry>,
+): Segment[] {
+  // Manuelle Muster (tp.*): exakte Suche. Glossar-Begriffe: siehe buildGlossaryMatchers.
   const out: Segment[] = []
   let rest = text
   while (rest.length > 0) {
@@ -118,11 +129,12 @@ function Term({ word, entry }: { word: string; entry: GlossaryEntry }) {
 
 /** Rendert Lektionstext und macht Fachbegriffe antippbar (mit Erklär-Popup). */
 export default function TermText({ text }: { text: string }) {
-  const { dict, lang } = useI18n()
+  const { dict } = useI18n()
   const { glossary } = useI18nData()
-  const patterns = useMemo(() => buildPatterns(dict), [dict, lang])
+  const patterns = useMemo(() => buildPatterns(dict), [dict])
   const byName = useMemo(() => new Map(glossary.map((g) => [g.term, g])), [glossary])
-  const segments = useMemo(() => splitIntoSegments(text, patterns, byName), [text, patterns, byName])
+  const matchers = useMemo(() => buildGlossaryMatchers(byName), [byName])
+  const segments = useMemo(() => splitIntoSegments(text, patterns, matchers, byName), [text, patterns, matchers, byName])
   return (
     <>
       {segments.map((s, i) =>

@@ -12,11 +12,20 @@ function countAtoms(mols: Mol[], coefs: number[], offset: number): Record<string
   return out
 }
 
-function CoefStepper({ value, onChange, disabled }: { value: number; onChange: (v: number) => void; disabled?: boolean }) {
+const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b))
+
+/** Grösster gemeinsamer Teiler aller Koeffizienten – ist er > 1, lässt sich die Gleichung noch kürzen. */
+function commonDivisor(coefs: number[]): number {
+  return coefs.reduce((acc, c) => gcd(acc, c), 0)
+}
+
+function CoefStepper({ value, onChange, disabled, label }: { value: number; onChange: (v: number) => void; disabled?: boolean; label: string }) {
   return (
     <div className="flex flex-col items-center gap-1">
       <button
-        disabled={disabled}
+        type="button"
+        aria-label={`${label} +1`}
+        disabled={disabled || value >= 6}
         onClick={() => onChange(Math.min(6, value + 1))}
         className="h-7 w-10 rounded-lg bg-slate-700 font-bold text-white hover:bg-slate-600 disabled:opacity-40"
       >
@@ -26,7 +35,9 @@ function CoefStepper({ value, onChange, disabled }: { value: number; onChange: (
         {value > 0 ? value : '–'}
       </div>
       <button
-        disabled={disabled}
+        type="button"
+        aria-label={`${label} −1`}
+        disabled={disabled || value <= 0}
         onClick={() => onChange(Math.max(0, value - 1))}
         className="h-7 w-10 rounded-lg bg-slate-700 font-bold text-white hover:bg-slate-600 disabled:opacity-40"
       >
@@ -48,6 +59,10 @@ function EquationGame({ onComplete }: { onComplete: () => void }) {
   const elements = useMemo(() => [...new Set([...Object.keys(leftAtoms), ...Object.keys(rightAtoms)])], [leftAtoms, rightAtoms])
 
   const balanced = elements.every((el) => (leftAtoms[el] ?? 0) === (rightAtoms[el] ?? 0) && (leftAtoms[el] ?? 0) > 0)
+  // Konvention: kleinstmögliche ganzzahlige Koeffizienten (4 H₂ + 2 O₂ → 4 H₂O ist zwar
+  // ausgeglichen, wird aber durch 2 gekürzt).
+  const divisor = balanced ? commonDivisor(coefs) : 1
+  const reducible = balanced && divisor > 1
 
   const setC = (i: number, v: number) => {
     const c = [...coefs]
@@ -58,7 +73,7 @@ function EquationGame({ onComplete }: { onComplete: () => void }) {
 
   const check = () => {
     setTried(true)
-    if (balanced && idx + 1 >= EQUATIONS.length) onComplete()
+    if (balanced && !reducible && idx + 1 >= EQUATIONS.length) onComplete()
   }
 
   const next = () => {
@@ -72,7 +87,7 @@ function EquationGame({ onComplete }: { onComplete: () => void }) {
     setTried(false)
   }
 
-  const solved = tried && balanced
+  const solved = tried && balanced && !reducible
   const done = solved && idx + 1 >= EQUATIONS.length
 
   const mols = [...eq.left, null, ...eq.right] as (Mol | null)[]
@@ -98,7 +113,7 @@ function EquationGame({ onComplete }: { onComplete: () => void }) {
               <div key={i} className="flex items-end gap-3">
                 {i > 0 && !isFirstRight && mols[i - 1] !== null && <span className="pb-3 text-2xl font-bold text-slate-500">+</span>}
                 <div className="flex items-end gap-1">
-                  <CoefStepper value={coefs[ci]} onChange={(v) => setC(ci, v)} disabled={solved} />
+                  <CoefStepper value={coefs[ci]} onChange={(v) => setC(ci, v)} disabled={solved} label={m.f} />
                   <span className="pb-2 text-3xl font-black text-white">{m.f}</span>
                 </div>
                 {isLastLeft && <span className="hidden" />}
@@ -137,6 +152,9 @@ function EquationGame({ onComplete }: { onComplete: () => void }) {
         )}
         {tried && !balanced && (
           <p className="text-sm text-rose-400">{t('lab.eq.wrong')}</p>
+        )}
+        {tried && reducible && (
+          <p className="text-sm text-amber-300">{t('lab.eq.reducible', { g: divisor })}</p>
         )}
         {solved && <p className="font-semibold text-emerald-400">{t('lab.eq.done')}</p>}
       </div>

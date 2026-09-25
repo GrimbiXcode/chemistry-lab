@@ -20,4 +20,14 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Generierte shadcn/ui-Komponenten: exportieren neben Komponenten auch
+    // Varianten-Helfer (cva) und nutzen bewusst Math.random() für Skeleton-Breiten.
+    // Diese Dateien werden nicht von Hand gepflegt – Regeln hier gezielt lockern.
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+      'react-hooks/purity': 'off',
+    },
+  },
 ])

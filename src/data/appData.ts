@@ -127,8 +127,12 @@ export interface GlossaryEntry {
 }
 
 // Reihenfolge + Modul-Bezug (stabil, aus der DE-Masterdatei übernommen).
+// Die Anzeige im Glossar wird sprachabhängig alphabetisch sortiert; der Index
+// hier ist nur der Schlüssel in den Sprachdateien (g.<index>.term / .def).
 export const GLOSSARY_META: { index: number; module: number }[] = [
   { index: 0, module: 1 }, { index: 1, module: 9 }, { index: 2, module: 3 }, { index: 3, module: 2 }, { index: 4, module: 4 }, { index: 5, module: 2 }, { index: 6, module: 10 }, { index: 7, module: 7 }, { index: 8, module: 8 }, { index: 9, module: 8 }, { index: 10, module: 6 }, { index: 11, module: 3 }, { index: 12, module: 2 }, { index: 13, module: 2 }, { index: 14, module: 9 }, { index: 15, module: 9 }, { index: 16, module: 8 }, { index: 17, module: 8 }, { index: 18, module: 3 }, { index: 19, module: 3 }, { index: 20, module: 7 }, { index: 21, module: 4 }, { index: 22, module: 4 }, { index: 23, module: 9 }, { index: 24, module: 6 }, { index: 25, module: 2 }, { index: 26, module: 10 }, { index: 27, module: 10 }, { index: 28, module: 5 }, { index: 29, module: 2 }, { index: 30, module: 7 }, { index: 31, module: 4 }, { index: 32, module: 2 }, { index: 33, module: 3 }, { index: 34, module: 3 }, { index: 35, module: 7 }, { index: 36, module: 6 }, { index: 37, module: 2 }, { index: 38, module: 8 }, { index: 39, module: 7 }, { index: 40, module: 10 }, { index: 41, module: 1 }, { index: 42, module: 4 }, { index: 43, module: 5 }, { index: 44, module: 8 }, { index: 45, module: 1 }, { index: 46, module: 1 }, { index: 47, module: 1 }, { index: 48, module: 6 }, { index: 49, module: 2 }, { index: 50, module: 3 }, { index: 51, module: 3 }, { index: 52, module: 4 }, { index: 53, module: 4 }, { index: 54, module: 7 }, { index: 55, module: 5 }, { index: 56, module: 5 }, { index: 57, module: 6 }, { index: 58, module: 7 }, { index: 59, module: 8 }, { index: 60, module: 8 }, { index: 61, module: 8 }, { index: 62, module: 9 }, { index: 63, module: 9 }, { index: 64, module: 9 }, { index: 65, module: 1 }, { index: 66, module: 2 }, { index: 67, module: 3 }, { index: 68, module: 6 }, { index: 69, module: 6 },
+  // Ergänzungen: Isotop, Atommasse, Elementsymbol, Kation, Anion, Metallbindung, Lösung, Konzentration, Reaktionsgeschwindigkeit
+  { index: 70, module: 2 }, { index: 71, module: 2 }, { index: 72, module: 2 }, { index: 73, module: 4 }, { index: 74, module: 4 }, { index: 75, module: 4 }, { index: 76, module: 8 }, { index: 77, module: 9 }, { index: 78, module: 9 },
 ]
 
 export function buildGlossary(t: TFn): GlossaryEntry[] {
@@ -148,30 +152,34 @@ export interface ElementInfo {
   group: number
   period: number
   cat: string
+  /** Relative Atommasse in u (gerundet, wie im Schul-PSE) – Grundlage für die molare Masse. */
   mass: number
+  /** Massenzahl (Protonen + Neutronen) des häufigsten Isotops – Grundlage für den Atom-Baukasten. */
+  a: number
 }
 
 export const ELEMENTS_STATIC: Omit<ElementInfo, 'name' | 'cat'>[] = [
-  { z: 1, symbol: 'H', group: 1, period: 1, mass: 1 },
-  { z: 2, symbol: 'He', group: 18, period: 1, mass: 4 },
-  { z: 3, symbol: 'Li', group: 1, period: 2, mass: 7 },
-  { z: 4, symbol: 'Be', group: 2, period: 2, mass: 9 },
-  { z: 5, symbol: 'B', group: 13, period: 2, mass: 11 },
-  { z: 6, symbol: 'C', group: 14, period: 2, mass: 12 },
-  { z: 7, symbol: 'N', group: 15, period: 2, mass: 14 },
-  { z: 8, symbol: 'O', group: 16, period: 2, mass: 16 },
-  { z: 9, symbol: 'F', group: 17, period: 2, mass: 19 },
-  { z: 10, symbol: 'Ne', group: 18, period: 2, mass: 20 },
-  { z: 11, symbol: 'Na', group: 1, period: 3, mass: 23 },
-  { z: 12, symbol: 'Mg', group: 2, period: 3, mass: 24 },
-  { z: 13, symbol: 'Al', group: 13, period: 3, mass: 27 },
-  { z: 14, symbol: 'Si', group: 14, period: 3, mass: 28 },
-  { z: 15, symbol: 'P', group: 15, period: 3, mass: 31 },
-  { z: 16, symbol: 'S', group: 16, period: 3, mass: 32 },
-  { z: 17, symbol: 'Cl', group: 17, period: 3, mass: 35.5 },
-  { z: 18, symbol: 'Ar', group: 18, period: 3, mass: 40 },
-  { z: 19, symbol: 'K', group: 1, period: 4, mass: 39 },
-  { z: 20, symbol: 'Ca', group: 2, period: 4, mass: 40 },
+  { z: 1, symbol: 'H', group: 1, period: 1, mass: 1, a: 1 },
+  { z: 2, symbol: 'He', group: 18, period: 1, mass: 4, a: 4 },
+  { z: 3, symbol: 'Li', group: 1, period: 2, mass: 7, a: 7 },
+  { z: 4, symbol: 'Be', group: 2, period: 2, mass: 9, a: 9 },
+  { z: 5, symbol: 'B', group: 13, period: 2, mass: 11, a: 11 },
+  { z: 6, symbol: 'C', group: 14, period: 2, mass: 12, a: 12 },
+  { z: 7, symbol: 'N', group: 15, period: 2, mass: 14, a: 14 },
+  { z: 8, symbol: 'O', group: 16, period: 2, mass: 16, a: 16 },
+  { z: 9, symbol: 'F', group: 17, period: 2, mass: 19, a: 19 },
+  { z: 10, symbol: 'Ne', group: 18, period: 2, mass: 20, a: 20 },
+  { z: 11, symbol: 'Na', group: 1, period: 3, mass: 23, a: 23 },
+  { z: 12, symbol: 'Mg', group: 2, period: 3, mass: 24, a: 24 },
+  { z: 13, symbol: 'Al', group: 13, period: 3, mass: 27, a: 27 },
+  { z: 14, symbol: 'Si', group: 14, period: 3, mass: 28, a: 28 },
+  { z: 15, symbol: 'P', group: 15, period: 3, mass: 31, a: 31 },
+  { z: 16, symbol: 'S', group: 16, period: 3, mass: 32, a: 32 },
+  // Chlor: Atommasse 35,5 u ist der Isotopen-Durchschnitt; das häufigste Isotop ist Cl-35 (18 Neutronen).
+  { z: 17, symbol: 'Cl', group: 17, period: 3, mass: 35.5, a: 35 },
+  { z: 18, symbol: 'Ar', group: 18, period: 3, mass: 40, a: 40 },
+  { z: 19, symbol: 'K', group: 1, period: 4, mass: 39, a: 39 },
+  { z: 20, symbol: 'Ca', group: 2, period: 4, mass: 40, a: 40 },
 ]
 
 const EL_CATS: Record<number, string> = {
@@ -201,12 +209,18 @@ export function buildElements(t: TFn): ElementInfo[] {
   }))
 }
 
-// ---------- Levels ----------
+// ---------- Levels & Prüfung ----------
+
+/** XP-Schwellen der Level (Index = level.<i> in den Sprachdateien). */
+export const XP_STEPS: readonly number[] = [0, 100, 250, 450, 650, 850]
 
 export function buildLevels(t: TFn): { xp: number; name: string }[] {
-  const xp = [0, 100, 250, 450, 650, 850]
-  return xp.map((x, i) => ({ xp: x, name: t(`level.${i}`) }))
+  return XP_STEPS.map((x, i) => ({ xp: x, name: t(`level.${i}`) }))
 }
+
+/** Abschlussprüfung: Anzahl Fragen und Bestehensgrenze. */
+export const EXAM_SIZE = 15
+export const EXAM_PASS_SCORE = 12
 
 // ---------- Labor-Infos ----------
 
@@ -233,11 +247,11 @@ export interface TermPattern {
   term: string
 }
 
-const PATTERN_COUNT = 89 // Anzahl tp.*-Einträge
+const PATTERN_LIMIT = 200 // Obergrenze für tp.*-Einträge (Schleife endet beim ersten fehlenden Key)
 
 export function buildPatterns(dict: Dict | null): TermPattern[] {
   const out: TermPattern[] = []
-  for (let i = 0; i < PATTERN_COUNT; i++) {
+  for (let i = 0; i < PATTERN_LIMIT; i++) {
     const match = translate(dict, `tp.${i}.match`)
     if (match === `tp.${i}.match`) break
     out.push({ match, term: translate(dict, `tp.${i}.term`) })

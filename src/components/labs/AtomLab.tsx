@@ -47,9 +47,25 @@ function Counter({ label, value, onChange, color, max = 20 }: { label: string; v
     <div className="flex items-center justify-between rounded-xl bg-slate-800/70 px-4 py-2.5">
       <span className={`text-sm font-semibold ${color}`}>{label}</span>
       <div className="flex items-center gap-3">
-        <button onClick={() => onChange(Math.max(0, value - 1))} className="h-8 w-8 rounded-lg bg-slate-700 font-bold text-slate-200 hover:bg-slate-600">−</button>
-        <span className="w-8 text-center text-lg font-bold text-white">{value}</span>
-        <button onClick={() => onChange(Math.min(max, value + 1))} className="h-8 w-8 rounded-lg bg-slate-700 font-bold text-slate-200 hover:bg-slate-600">+</button>
+        <button
+          type="button"
+          aria-label={`${label} −1`}
+          disabled={value <= 0}
+          onClick={() => onChange(Math.max(0, value - 1))}
+          className="h-8 w-8 rounded-lg bg-slate-700 font-bold text-slate-200 hover:bg-slate-600 disabled:opacity-40"
+        >
+          −
+        </button>
+        <span className="w-8 text-center text-lg font-bold text-white" aria-live="polite">{value}</span>
+        <button
+          type="button"
+          aria-label={`${label} +1`}
+          disabled={value >= max}
+          onClick={() => onChange(Math.min(max, value + 1))}
+          className="h-8 w-8 rounded-lg bg-slate-700 font-bold text-slate-200 hover:bg-slate-600 disabled:opacity-40"
+        >
+          +
+        </button>
       </div>
     </div>
   )
@@ -60,7 +76,9 @@ function AtomExplorer() {
   const { elements } = useI18nData()
   const [z, setZ] = useState(8)
   const el = elements.find((x) => x.z === z)!
-  const neutrons = Math.round(el.mass) - el.z
+  // Neutronen des häufigsten Isotops (Massenzahl − Ordnungszahl), nicht aus der
+  // gemittelten Atommasse gerundet – sonst bekäme Chlor 19 statt 18 Neutronen.
+  const neutrons = el.a - el.z
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-900/60 p-4">
       <div className="mb-2 flex items-center justify-between">
@@ -82,7 +100,7 @@ function AtomExplorer() {
         <div className="rounded-lg bg-yellow-500/10 py-2 text-yellow-300"><b>{el.z}</b> {t('lab.atom.electrons')}</div>
       </div>
       <p className="mt-2 text-center text-xs text-slate-400">
-        {t('lab.atom.info', { name: el.name, z: el.z, mass: Math.round(el.mass), shells: shellDistribution(el.z).length })}
+        {t('lab.atom.info', { name: el.name, z: el.z, mass: el.a, shells: shellDistribution(el.z).length })}
       </p>
     </div>
   )

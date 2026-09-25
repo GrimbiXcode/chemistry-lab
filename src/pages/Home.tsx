@@ -4,7 +4,7 @@ import {
   CheckCircle2, ChevronRight, BookOpen, PencilRuler, Microscope, Sparkles, RotateCcw, Play,
   Filter, Flame, Scale, Repeat, GraduationCap, BookMarked, FlaskRound,
 } from 'lucide-react'
-import { type ChemModule } from '@/data/appData'
+import { EXAM_PASS_SCORE, type ChemModule } from '@/data/appData'
 import type { ModulePosition } from '@/hooks/useProgress'
 import { useProgress } from '@/hooks/useProgress'
 import { useI18n } from '@/i18n'
@@ -18,8 +18,13 @@ const ICONS: Record<string, typeof Waves> = {
 
 export default function Home() {
   const { t, dict } = useI18n()
-  const { modules } = useI18nData()
+  const { modules, glossary } = useI18nData()
   const { progress, overallProgress, level, resetAll } = useProgress(dict)
+
+  // Zurücksetzen ist endgültig – deshalb vorher nachfragen.
+  const confirmReset = () => {
+    if (window.confirm(t('home.resetConfirm'))) resetAll()
+  }
 
   const positionLabel = (m: ChemModule, pos: ModulePosition): string => {
     if (pos.phase === 'learn') return t('home.pos.lesson', { i: pos.step + 1, n: m.steps.length })
@@ -61,7 +66,7 @@ export default function Home() {
             />
           </div>
           {progress.xp > 0 && (
-            <button onClick={resetAll} className="mt-2 flex items-center gap-1 text-xs text-slate-600 transition hover:text-slate-400">
+            <button type="button" onClick={confirmReset} className="mt-2 flex items-center gap-1 text-xs text-slate-600 transition hover:text-slate-400">
               <RotateCcw className="h-3 w-3" /> {t('home.reset')}
             </button>
           )}
@@ -147,8 +152,8 @@ export default function Home() {
             <h3 className="mt-3 font-bold text-white">{t('home.exam.title')}</h3>
             <p className="mt-1 text-sm text-slate-400">{t('home.exam.text')}</p>
             {progress.examBest !== null && (
-              <span className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${progress.examBest >= 12 ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-800 text-slate-300'}`}>
-                {t('home.exam.best', { n: progress.examBest })} {progress.examBest >= 12 ? t('home.exam.passed') : ''}
+              <span className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${progress.examBest >= EXAM_PASS_SCORE ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-800 text-slate-300'}`}>
+                {t('home.exam.best', { n: progress.examBest })} {progress.examBest >= EXAM_PASS_SCORE ? t('home.exam.passed') : ''}
               </span>
             )}
           </Link>
@@ -160,7 +165,7 @@ export default function Home() {
               <BookMarked className="h-5 w-5" />
             </span>
             <h3 className="mt-3 font-bold text-white">{t('home.glossary.title')}</h3>
-            <p className="mt-1 text-sm text-slate-400">{t('home.glossary.text')}</p>
+            <p className="mt-1 text-sm text-slate-400">{t('home.glossary.text', { n: glossary.length })}</p>
           </Link>
           <Link
             to="/labore"

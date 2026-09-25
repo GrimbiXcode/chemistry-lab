@@ -1,22 +1,17 @@
 import { useMemo, useState } from 'react'
 import { LangLink as Link } from '@/i18n'
 import { ArrowLeft, GraduationCap, Printer, RotateCcw, Award } from 'lucide-react'
-import { type QuizQuestion } from '@/data/appData'
+import { EXAM_SIZE, EXAM_PASS_SCORE as PASS_SCORE, type ChemModule, type QuizQuestion } from '@/data/appData'
 import { useProgress } from '@/hooks/useProgress'
 import { useI18n } from '@/i18n'
 import { useI18nData } from '@/hooks/useI18nData'
-import { shuffledOptions } from '@/components/Quiz'
+import { shuffledOptions } from '@/lib/quiz'
 import Layout from '@/components/Layout'
-
-const EXAM_SIZE = 15
-const PASS_SCORE = 12
 
 interface ExamQuestion extends QuizQuestion {
   moduleTitle: string
   moduleNumber: number
 }
-
-import type { ChemModule } from '@/data/appData'
 
 function drawQuestions(modules: ChemModule[]): ExamQuestion[] {
   const all = modules.flatMap((m) =>
@@ -43,7 +38,6 @@ export default function Exam() {
   const { modules } = useI18nData()
   const { progress, saveExamScore } = useProgress(dict)
   const [runId, setRunId] = useState(0)
-  const tfLabels: [string, string] = [t('quiz.tf.true'), t('quiz.tf.false')]
   const [questions, setQuestions] = useState<ExamQuestion[]>(() => drawQuestions(modules))
   const [idx, setIdx] = useState(0)
   const [pickedIdx, setPickedIdx] = useState<number | null>(null)
@@ -55,7 +49,11 @@ export default function Exam() {
   const score = answers.filter((a) => a.correct).length
   const passed = score >= PASS_SCORE
 
-  const optionSets = useMemo(() => questions.map((q) => shuffledOptions(q, tfLabels)), [questions, lang])
+  // t wechselt mit der Sprache – dann werden auch die Richtig/Falsch-Labels neu gebaut.
+  const optionSets = useMemo(
+    () => questions.map((q) => shuffledOptions(q, [t('quiz.tf.true'), t('quiz.tf.false')])),
+    [questions, t],
+  )
 
   const pick = (oi: number) => {
     if (pickedIdx !== null) return
@@ -116,7 +114,7 @@ export default function Exam() {
 
             <div className="mt-6 flex items-center justify-between text-sm text-slate-400">
               <span>{t('exam.questionOf', { i: idx + 1, n: questions.length })}</span>
-              <div className="flex gap-1">
+              <div className="flex gap-1" aria-hidden="true">
                 {questions.map((_, i) => (
                   <span key={i} className={`h-2 w-4 rounded-full ${i < idx ? 'bg-amber-500' : i === idx ? 'bg-amber-300' : 'bg-slate-700'}`} />
                 ))}

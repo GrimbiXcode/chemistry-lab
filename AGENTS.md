@@ -33,11 +33,12 @@ npm run lint      # ESLint (flat config, eslint.config.js)
 
 - **Es gibt kein Test-Framework** (kein Vitest/Jest, keine Tests). Verifikation erfolgt über
   `npm run build` (TypeScript-Check inklusive) und `npm run lint`.
-- Achtung: `npm run lint` schlägt aktuell mit vorhandenen Fehlern fehl (15 errors,
-  8 warnings, u. a. `react-hooks`-Regeln in `Quiz.tsx`, `TermText.tsx`, `ParticleLab.tsx`).
-  Das ist Bestand, nicht deine Änderung – verschlimmere es nicht, siehe aber nicht als
-  grünes Quality-Gate an.
-- `npm run build` ist verifiziert fehlerfrei.
+- `npm run build` und `npm run lint` laufen beide fehlerfrei durch – beides ist das
+  Quality-Gate, halte es grün. Für die generierten shadcn/ui-Dateien unter
+  `src/components/ui/` sind `react-refresh/only-export-components` und `react-hooks/purity`
+  in `eslint.config.js` gezielt abgeschaltet; für eigenen Code gelten alle Regeln.
+- Konsistenz der Sprachdateien prüfen (alle 20 Dateien müssen dieselben Keys wie `de.json`
+  haben): kurzes Node-Skript, das die Keys von `de.json` gegen jede andere Datei vergleicht.
 
 ## Code-Organisation
 
@@ -50,26 +51,34 @@ src/
   components/
     Layout.tsx          App-Rahmen (Navigation, Footer)
     Quiz.tsx            Quiz-Komponente (mc/tf)
-    TermText.tsx        Rendert Text mit Fachbegriff-Hervorhebung
+    TermText.tsx        Rendert Text mit Fachbegriff-Hervorhebung (Glossar-Popups)
     ui/                 shadcn/ui-Komponenten (nicht von Hand umschreiben)
     labs/               10 interaktive Labore + index.ts (LABS-Registry)
   data/
-    appData.ts          MODULE_META + Builder-Funktionen (buildModules, buildGlossary, ...)
+    appData.ts          MODULE_META, GLOSSARY_META, ELEMENTS_STATIC, XP_STEPS, EXAM_SIZE/EXAM_PASS_SCORE
+                        + Builder-Funktionen (buildModules, buildGlossary, ...)
     labContent.ts       Sprachunabhängige Labor-Aufgabendaten
   hooks/
     useProgress.ts      XP/Fortschritt in localStorage, Custom-Event bei Änderung
     useI18nData.ts      Baut sprachabhängige Datensätze per useMemo neu
     use-mobile.ts       Breakpoint-Hook (von shadcn)
   i18n/
-    index.tsx           I18nGate, I18nProvider, useI18n, LangLink, translate()
+    index.ts            Barrel: re-exportiert core.ts + components.tsx (Import immer über „@/i18n“)
+    core.ts             LANGS, translate(), useI18n, loadDict (lazy), stripLang – keine Komponenten
+    components.tsx      I18nGate, I18nProvider, LangLink
     locales/*.json      20 Sprachdateien, flache Dotted-Keys (de.json = Quelle & Fallback)
-  lib/utils.ts          cn() (clsx + tailwind-merge)
+  lib/
+    utils.ts            cn() (clsx + tailwind-merge)
+    quiz.ts             shuffledOptions() – deterministisches Mischen der Antworten
+    format.ts           formatNumber()/formatFixed() – Zahlen sprachabhängig (35,5 vs. 35.5)
 ```
 
-Wichtige Konfigurationsdateien: `vite.config.ts` (Alias, Port 3000, `base: './'`),
-`tsconfig.app.json` (strict, `noUnusedLocals`, `noUncheckedSideEffectImports`),
-`tailwind.config.js`, `postcss.config.js`, `components.json` (shadcn), `eslint.config.js`.
-Keine CI-/Deploy-Konfiguration vorhanden.
+Wichtige Konfigurationsdateien: `vite.config.ts` (Alias, Port 3000, `base: './'`,
+Vendor-Chunk für React/Router), `tsconfig.app.json` (strict, `noUnusedLocals`,
+`noUncheckedSideEffectImports`), `tailwind.config.js`, `postcss.config.js`,
+`components.json` (shadcn), `eslint.config.js`.
+CI: `.github/workflows/` baut das Docker-Image bei Push auf `main` (nur Check) und
+veröffentlicht es bei `v*`-Tags nach GHCR.
 
 ## Zentrale Konventionen (unbedingt beachten)
 
@@ -87,9 +96,18 @@ Keine CI-/Deploy-Konfiguration vorhanden.
   Übersetzungs-Keys zusammengesetzt (Zugriff in Komponenten über `useI18nData()`).
 - Interne Links immer über **`LangLink`** aus `@/i18n` (setzt das Sprachpräfix automatisch),
   nicht direkt `Link` aus react-router.
-- Sprachdateien werden per dynamischem Import lazy geladen (Code-Splitting pro Sprache).
-  Neue Sprache: JSON-Datei in `src/i18n/locales/` + Eintrag in `LANGS` in `src/i18n/index.tsx`.
+- Sprachdateien werden per `import.meta.glob` lazy geladen (Code-Splitting pro Sprache;
+  `de.json` ist statisch eingebunden). Neue Sprache: JSON-Datei in `src/i18n/locales/` +
+  Eintrag in `LANGS` in `src/i18n/core.ts`.
 - RTL wird für `ar` und `ur` automatisch über `document.dir` gesetzt.
+- Glossar: Einträge heissen `g.<index>.term` / `g.<index>.def`; die Modul-Zuordnung steht
+  in `GLOSSARY_META` (`appData.ts`). Neuer Begriff = nächster freier Index in allen 20
+  Sprachdateien + Eintrag in `GLOSSARY_META`. Die Anzeige sortiert sprachabhängig
+  alphabetisch. `TermText` verlinkt Glossar-Begriffe automatisch im Lektionstext
+  (Wortgrenze + bis zu 2 Flexionsbuchstaben) – bei Begriffen mit Alltagsbedeutung
+  (z. B. „Lösung“) darauf achten, dass Lektionstexte das Wort nur im Fachsinn verwenden.
+- Zahlen in Laboren nicht mit `toFixed()` formatieren, sondern über `@/lib/format`
+  (Dezimaltrennzeichen je Sprache).
 
 ### Labore
 
@@ -106,7 +124,17 @@ Keine CI-/Deploy-Konfiguration vorhanden.
   `useProgress()`. Änderungen feuern das Window-Event `chemielab-progress-updated`,
   damit mehrere Komponenten synchron bleiben.
 - XP-Logik: +10 pro richtiger Frage (einmalig), +50 pro abgeschlossenem Labor,
-  Prüfungs-XP nur für Verbesserung des Bestwerts. Level-Schwellen in `XP_STEPS`.
+  Prüfungs-XP nur für Verbesserung des Bestwerts. Level-Schwellen in `XP_STEPS`
+  (`appData.ts`), Prüfungsgrösse/-grenze in `EXAM_SIZE`/`EXAM_PASS_SCORE`.
+
+### Fachliche Daten
+
+- `ELEMENTS_STATIC` führt pro Element zwei Massen: `mass` = relative Atommasse in u
+  (Chlor 35,5; Basis für molare Massen) und `a` = Massenzahl des häufigsten Isotops
+  (Chlor 35; Basis für Neutronenzahl im Atom-Baukasten). Nicht verwechseln.
+- Fachliche Aussagen in den Lektionstexten sind Schulniveau, aber korrekt zu halten
+  (z. B. Entkalker ist sauer, nicht basisch; „Massenzahl“ ≠ „Atommasse“). Änderungen an
+  Lerninhalten immer in allen 20 Sprachdateien nachziehen.
 
 ### Stil & Code-Stil
 
@@ -122,7 +150,9 @@ Keine CI-/Deploy-Konfiguration vorhanden.
 
 - `npm run build` erzeugt statische Dateien in `dist/`; dank `base: './'` und `HashRouter`
   läuft der Build von jedem statischen Host/Unterpfad ohne Server-Konfiguration.
-- Es gibt kein CI/CD, keine GitHub Actions, kein Backend, keine Umgebungsvariablen.
+- Docker: Multi-Stage-`Dockerfile` (Node-Build + nginx), `docker-compose.yml` für lokalen
+  Betrieb, GitHub-Actions-Workflows für Build-Check und GHCR-Release (siehe README).
+- Kein Backend, keine Umgebungsvariablen.
 
 ## Sicherheit
 
