@@ -68,14 +68,19 @@ function splitIntoSegments(
         chosenTerm = gm.term
       }
     }
-    if (!chosenTerm || earliest === -1) {
+    if (!chosenTerm || earliest === -1 || chosenMatch.trim() === '') {
       out.push({ kind: 'text', text: rest })
       break
     }
-    if (earliest > 0) out.push({ kind: 'text', text: rest.slice(0, earliest) })
+    // Manuelle Muster dürfen mit Leerzeichen beginnen/enden (z. B. „ ions“, damit „reactions“
+    // nicht getroffen wird) – der Whitespace gehört aber nicht in den verlinkten Begriff.
+    const lead = chosenMatch.length - chosenMatch.trimStart().length
+    const word = chosenMatch.trim()
+    const before = rest.slice(0, earliest + lead)
+    if (before) out.push({ kind: 'text', text: before })
     const entry = byName.get(chosenTerm)
-    out.push({ kind: 'term', text: chosenMatch, entry })
-    rest = rest.slice(earliest + chosenMatch.length)
+    out.push({ kind: 'term', text: word, entry })
+    rest = rest.slice(earliest + lead + word.length)
   }
   return out
 }
