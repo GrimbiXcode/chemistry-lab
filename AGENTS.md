@@ -108,6 +108,13 @@ veröffentlicht es bei `v*`-Tags nach GHCR.
   (z. B. „Lösung“) darauf achten, dass Lektionstexte das Wort nur im Fachsinn verwenden.
 - Zahlen in Laboren nicht mit `toFixed()` formatieren, sondern über `@/lib/format`
   (Dezimaltrennzeichen je Sprache).
+- Qualitätsstand der Übersetzungen: `de.json` ist redaktionell geprüft, `en.json` brauchbar.
+  Die übrigen 18 Dateien stammen ursprünglich aus einer fehlerhaften Maschinenübersetzung
+  (z. B. fr „Fils“ für Ion, „Vapotage“ für Verdampfen; zh mit Datenmüll). Sauber neu
+  übersetzt sind bisher nur die überarbeiteten Lektionstexte (Schritt s2/s3 vieler Module),
+  die Glossareinträge 7, 21, 25, 39, 41 und 70–78 sowie die Atom-Baukasten-Hinweise.
+  Bei Gelegenheit sollten diese 18 Dateien vollständig aus `de.json` neu übersetzt werden.
+  In RTL-Sprachen (`ar`, `ur`) im Fliesstext den Pfeil „←“ verwenden, in Formeln „→“.
 
 ### Labore
 
