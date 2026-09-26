@@ -25,11 +25,14 @@ interface GlossaryMatcher {
  * damit ein Begriff nie mitten in einer Silbe abgeschnitten wird – das würde die Darstellung zerstören.
  */
 function buildGlossaryMatchers(byName: Map<string, GlossaryEntry>): GlossaryMatcher[] {
+  // Flexionsendungen nur bei längeren Begriffen zulassen: Bei kurzen Begriffen wie „Sel“
+  // (fr) oder „Ion“ würde die Endung sonst ganz andere Wörter treffen („selon“). Kurze
+  // Begriffe in gebeugter Form werden über die manuellen tp.*-Muster abgedeckt.
   return [...byName.keys()]
     .filter((term) => term.length > 2)
     .map((term) => ({
       term,
-      re: new RegExp(`(?<![\\p{L}\\p{N}\\p{M}])${escapeRe(term)}[\\p{L}\\p{M}]{0,2}(?![\\p{L}\\p{N}\\p{M}])`, 'iu'),
+      re: new RegExp(`(?<![\\p{L}\\p{N}\\p{M}])${escapeRe(term)}${term.length >= 5 ? '[\\p{L}\\p{M}]{0,2}' : ''}(?![\\p{L}\\p{N}\\p{M}])`, 'iu'),
     }))
     .sort((a, b) => b.term.length - a.term.length)
 }
