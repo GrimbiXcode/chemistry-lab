@@ -19,13 +19,17 @@ interface GlossaryMatcher {
   re: RegExp
 }
 
-/** Glossar-Begriffe: Wortgrenzen + kurze Flexionsendung (Plural -s/-e/-n etc.), case-insensitive. */
+/**
+ * Glossar-Begriffe: Wortgrenzen + kurze Flexionsendung (Plural -s/-e/-n etc.), case-insensitive.
+ * Kombinierende Zeichen (\p{M}, z. B. Vokalzeichen in Devanagari/Bengali/Arabisch) zählen zum Wort,
+ * damit ein Begriff nie mitten in einer Silbe abgeschnitten wird – das würde die Darstellung zerstören.
+ */
 function buildGlossaryMatchers(byName: Map<string, GlossaryEntry>): GlossaryMatcher[] {
   return [...byName.keys()]
     .filter((term) => term.length > 2)
     .map((term) => ({
       term,
-      re: new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(term)}[\\p{L}]{0,2}(?![\\p{L}\\p{N}])`, 'iu'),
+      re: new RegExp(`(?<![\\p{L}\\p{N}\\p{M}])${escapeRe(term)}[\\p{L}\\p{M}]{0,2}(?![\\p{L}\\p{N}\\p{M}])`, 'iu'),
     }))
     .sort((a, b) => b.term.length - a.term.length)
 }
