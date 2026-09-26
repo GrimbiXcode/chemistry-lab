@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useI18n } from '@/i18n'
 import { MOL_SUBSTANCES, MOL_TASKS } from '@/data/labContent'
+import { formatNumber } from '@/lib/format'
 
 function MolExplorer() {
-  const { t } = useI18n()
-  const fmt = (x: number): string => (Number.isInteger(x) ? String(x) : x.toFixed(1))
+  const { t, lang } = useI18n()
+  const fmt = (x: number): string => formatNumber(x, lang, 1)
   const [idx, setIdx] = useState(0)
   const [n, setN] = useState(1)
   const s = MOL_SUBSTANCES[idx]
@@ -37,6 +38,7 @@ function MolExplorer() {
             max={5}
             step={0.5}
             value={n}
+            aria-label={t('lab.mol.amount')}
             onChange={(e) => setN(Number(e.target.value))}
             className="w-full accent-purple-400"
           />
@@ -57,7 +59,9 @@ function MolWorkshop({ onComplete }: { onComplete: () => void }) {
   const task = MOL_TASKS[idx]
 
   const check = () => {
-    const ok = Number(val.replace(',', '.')) === task.answer
+    // Dezimalkomma und -punkt akzeptieren, Leerzeichen ignorieren; leere Eingabe zählt als falsch.
+    const parsed = Number(val.trim().replace(',', '.'))
+    const ok = val.trim() !== '' && Math.abs(parsed - task.answer) < 1e-9
     setFeedback(ok ? 'right' : 'wrong')
     if (ok && idx + 1 >= MOL_TASKS.length) onComplete()
   }

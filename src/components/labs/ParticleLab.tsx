@@ -9,8 +9,12 @@ function ParticleSim() {
   const { t } = useI18n()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [temp, setTemp] = useState(10)
+  // Die Animationsschleife liest die Temperatur über eine Ref, damit sie nicht
+  // bei jedem Schieber-Schritt neu gestartet werden muss.
   const tempRef = useRef(temp)
-  tempRef.current = temp
+  useEffect(() => {
+    tempRef.current = temp
+  }, [temp])
   const partsRef = useRef<P[]>([])
 
   useEffect(() => {
@@ -117,6 +121,7 @@ function ParticleSim() {
           min={0}
           max={100}
           value={temp}
+          aria-label={t('lab.particle.temp', { t: temp })}
           onChange={(e) => setTemp(Number(e.target.value))}
           className="w-full accent-cyan-400"
         />

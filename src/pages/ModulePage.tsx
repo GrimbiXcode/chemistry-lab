@@ -155,9 +155,12 @@ export default function ModulePage() {
             <div className="mb-3 flex items-center justify-between text-sm text-slate-400">
               <span>{t('mod.lessonOf', { i: step + 1, n: module.steps.length })}</span>
               <div className="flex gap-1.5">
-                {module.steps.map((_, i) => (
+                {module.steps.map((s, i) => (
                   <button
                     key={i}
+                    type="button"
+                    aria-label={`${t('mod.lessonOf', { i: i + 1, n: module.steps.length })}: ${s.title}`}
+                    aria-current={i === step ? 'step' : undefined}
                     onClick={() => setStep(i)}
                     className={`h-2 w-8 rounded-full transition ${i === step ? `bg-gradient-to-r ${module.color}` : i < step ? 'bg-emerald-500' : 'bg-slate-800'}`}
                   />

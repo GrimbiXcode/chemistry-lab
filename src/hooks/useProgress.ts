@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { MODULE_META } from '@/data/appData'
+import { MODULE_META, XP_STEPS } from '@/data/appData'
 import { translate } from '@/i18n'
 import type { Dict } from '@/i18n'
 
@@ -31,13 +31,17 @@ function load(): Progress {
     const raw = localStorage.getItem(KEY)
     if (raw) return { ...DEFAULT, ...JSON.parse(raw) }
   } catch {
-    /* ignore */
+    /* defekte oder gesperrte Speicherung: mit leerem Fortschritt weiterarbeiten */
   }
   return DEFAULT
 }
 
 function save(p: Progress) {
-  localStorage.setItem(KEY, JSON.stringify(p))
+  try {
+    localStorage.setItem(KEY, JSON.stringify(p))
+  } catch {
+    /* z. B. Privatmodus oder voller Speicher – die Sitzung läuft dann ohne Persistenz weiter */
+  }
   window.dispatchEvent(new Event(EVENT))
 }
 
@@ -117,7 +121,6 @@ export function useProgress(dict?: Dict | null) {
     save(DEFAULT)
   }, [])
 
-  const XP_STEPS = [0, 100, 250, 450, 650, 850]
   const li = XP_STEPS.reduce((acc, x, i) => (progress.xp >= x ? i : acc), 0)
   const ni = XP_STEPS.findIndex((x) => x > progress.xp)
   const level = { xp: XP_STEPS[li], idx: li }

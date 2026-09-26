@@ -3,6 +3,7 @@ import { CATEGORY_COLORS, CATEGORY_COLOR_KEYS, type ElementInfo } from '@/data/a
 import { HUNTS } from '@/data/labContent'
 import { useI18n } from '@/i18n'
 import { useI18nData } from '@/hooks/useI18nData'
+import { formatNumber } from '@/lib/format'
 
 function Table({ onSelect, selected, elements }: { onSelect: (el: ElementInfo) => void; selected?: number | null; elements: ElementInfo[] }) {
   const { t } = useI18n()
@@ -12,6 +13,9 @@ function Table({ onSelect, selected, elements }: { onSelect: (el: ElementInfo) =
         {elements.map((el) => (
           <button
             key={el.z}
+            type="button"
+            aria-label={`${el.z} ${el.name}`}
+            aria-pressed={selected === el.z}
             onClick={() => onSelect(el)}
             style={{ gridColumnStart: el.group, gridRowStart: el.period }}
             className={`flex aspect-square flex-col items-center justify-center rounded-md text-white transition hover:scale-110 hover:ring-2 hover:ring-white/70 ${CATEGORY_COLORS[el.cat]} ${
@@ -34,6 +38,7 @@ function Table({ onSelect, selected, elements }: { onSelect: (el: ElementInfo) =
   )
 }
 
+/** Valenzelektronen der Hauptgruppen-Elemente; Helium ist mit 2 Elektronen bereits „voll“. */
 function valence(el: ElementInfo): number {
   if (el.group === 18) return el.z === 2 ? 2 : 8
   if (el.group <= 2) return el.group
@@ -41,7 +46,7 @@ function valence(el: ElementInfo): number {
 }
 
 function Explorer() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const { elements } = useI18nData()
   const [sel, setSel] = useState<ElementInfo>(elements.find((e) => e.z === 8)!)
   return (
@@ -61,7 +66,7 @@ function Explorer() {
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
           <div className="rounded-lg bg-slate-900/60 px-3 py-2 text-slate-300">{t('lab.periodic.ordnungszahl')}<br /><b className="text-white">{sel.z}</b></div>
-          <div className="rounded-lg bg-slate-900/60 px-3 py-2 text-slate-300">{t('lab.periodic.massenzahl')}<br /><b className="text-white">{sel.mass}</b></div>
+          <div className="rounded-lg bg-slate-900/60 px-3 py-2 text-slate-300">{t('lab.periodic.atommasse')}<br /><b className="text-white">{formatNumber(sel.mass, lang)}</b></div>
           <div className="rounded-lg bg-slate-900/60 px-3 py-2 text-slate-300">{t('lab.periodic.valence')}<br /><b className="text-white">{valence(sel)}</b></div>
           <div className="rounded-lg bg-slate-900/60 px-3 py-2 text-slate-300">{t('lab.periodic.shells')}<br /><b className="text-white">{sel.period}</b></div>
         </div>

@@ -6,19 +6,26 @@ import { useI18nData } from '@/hooks/useI18nData'
 import Layout from '@/components/Layout'
 
 export default function Glossary() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const { glossary, modules } = useI18nData()
   const [query, setQuery] = useState('')
   const [moduleFilter, setModuleFilter] = useState<number | null>(null)
 
+  // Alphabetisch in der aktiven Sprache sortieren – die Reihenfolge in den
+  // Sprachdateien ist historisch gewachsen und nicht mehr alphabetisch.
+  const sorted = useMemo(
+    () => [...glossary].sort((a, b) => a.term.localeCompare(b.term, lang, { sensitivity: 'base' })),
+    [glossary, lang],
+  )
+
   const terms = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return glossary.filter((t) => {
-      if (moduleFilter !== null && t.module !== moduleFilter) return false
+    return sorted.filter((entry) => {
+      if (moduleFilter !== null && entry.module !== moduleFilter) return false
       if (!q) return true
-      return t.term.toLowerCase().includes(q) || t.def.toLowerCase().includes(q)
+      return entry.term.toLowerCase().includes(q) || entry.def.toLowerCase().includes(q)
     })
-  }, [query, moduleFilter, glossary])
+  }, [query, moduleFilter, sorted])
 
   return (
     <Layout>
@@ -40,14 +47,17 @@ export default function Glossary() {
           <div className="relative min-w-60 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
             <input
+              type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('gloss.search')}
+              aria-label={t('gloss.search')}
               className="w-full rounded-xl border border-slate-700 bg-slate-900/70 py-2.5 pl-10 pr-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
             />
           </div>
           <select
             value={moduleFilter ?? ''}
+            aria-label={t('gloss.allModules')}
             onChange={(e) => setModuleFilter(e.target.value === '' ? null : Number(e.target.value))}
             className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2.5 text-white outline-none focus:border-sky-400"
           >

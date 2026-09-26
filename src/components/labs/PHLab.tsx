@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useI18n } from '@/i18n'
 import { PH_SUBSTANCES, PH_SORT_TASKS } from '@/data/labContent'
+import { formatFixed } from '@/lib/format'
 
 
 function phColor(ph: number): string {
@@ -27,7 +28,7 @@ function phColor(ph: number): string {
 }
 
 function PHExplorer({ onSelect }: { onSelect?: (id: string) => void }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const [i, setI] = useState(6)
   const s = PH_SUBSTANCES[i]
   const color = phColor(s.ph)
@@ -37,8 +38,8 @@ function PHExplorer({ onSelect }: { onSelect?: (id: string) => void }) {
     <div className="rounded-2xl border border-slate-700 bg-slate-900/60 p-4">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-sm font-semibold text-teal-300">{t('lab.ph.explorer')}</span>
-        <span className="rounded-full px-3 py-1 text-sm font-bold" style={{ backgroundColor: `${color}33`, color }}>
-          pH {s.ph.toFixed(1)} · {phLabel(s.ph)}
+        <span className="rounded-full px-3 py-1 text-sm font-bold" style={{ backgroundColor: `${color}33`, color }} aria-live="polite">
+          pH {formatFixed(s.ph, lang, 1)} · {phLabel(s.ph)}
         </span>
       </div>
       <div className="flex items-center gap-6">
@@ -62,6 +63,7 @@ function PHExplorer({ onSelect }: { onSelect?: (id: string) => void }) {
             min={0}
             max={PH_SUBSTANCES.length - 1}
             value={i}
+            aria-label={t(`lab.ph.sub.${s.id}`)}
             onChange={(e) => { setI(Number(e.target.value)); onSelect?.(PH_SUBSTANCES[Number(e.target.value)].id) }}
             className="mt-3 w-full accent-teal-400"
           />

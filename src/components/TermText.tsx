@@ -14,18 +14,36 @@ interface Segment {
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-function splitIntoSegments(text: string, patterns: { match: string; term: string }[], byName: Map<string, GlossaryEntry>): Segment[] {
-  // Manuelle Muster: exakte Suche. Glossar-Begriffe: Wortgrenzen + case-insensitive,
-  // damit sie auch in anderen Wortformen/Schreibweisen erkannt werden.
-  const glossaryMatchers = [...byName.keys()]
+interface GlossaryMatcher {
+  term: string
+  re: RegExp
+}
+
+/**
+ * Glossar-Begriffe: Wortgrenzen + kurze Flexionsendung (Plural -s/-e/-n etc.), case-insensitive.
+ * Kombinierende Zeichen (\p{M}, z. B. Vokalzeichen in Devanagari/Bengali/Arabisch) zählen zum Wort,
+ * damit ein Begriff nie mitten in einer Silbe abgeschnitten wird – das würde die Darstellung zerstören.
+ */
+function buildGlossaryMatchers(byName: Map<string, GlossaryEntry>): GlossaryMatcher[] {
+  // Flexionsendungen nur bei längeren Begriffen zulassen: Bei kurzen Begriffen wie „Sel“
+  // (fr) oder „Ion“ würde die Endung sonst ganz andere Wörter treffen („selon“). Kurze
+  // Begriffe in gebeugter Form werden über die manuellen tp.*-Muster abgedeckt.
+  return [...byName.keys()]
     .filter((term) => term.length > 2)
     .map((term) => ({
       term,
-      // Wortgrenzen + kurze Flexionsendung (Plural -s/-e/-n etc.), case-insensitive.
-      re: new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(term)}[\\p{L}]{0,2}(?![\\p{L}\\p{N}])`, 'iu'),
+      re: new RegExp(`(?<![\\p{L}\\p{N}\\p{M}])${escapeRe(term)}${term.length >= 5 ? '[\\p{L}\\p{M}]{0,2}' : ''}(?![\\p{L}\\p{N}\\p{M}])`, 'iu'),
     }))
     .sort((a, b) => b.term.length - a.term.length)
+}
 
+function splitIntoSegments(
+  text: string,
+  patterns: { match: string; term: string }[],
+  glossaryMatchers: GlossaryMatcher[],
+  byName: Map<string, GlossaryEntry>,
+): Segment[] {
+  // Manuelle Muster (tp.*): exakte Suche. Glossar-Begriffe: siehe buildGlossaryMatchers.
   const out: Segment[] = []
   let rest = text
   while (rest.length > 0) {
@@ -50,14 +68,19 @@ function splitIntoSegments(text: string, patterns: { match: string; term: string
         chosenTerm = gm.term
       }
     }
-    if (!chosenTerm || earliest === -1) {
+    if (!chosenTerm || earliest === -1 || chosenMatch.trim() === '') {
       out.push({ kind: 'text', text: rest })
       break
     }
-    if (earliest > 0) out.push({ kind: 'text', text: rest.slice(0, earliest) })
+    // Manuelle Muster dürfen mit Leerzeichen beginnen/enden (z. B. „ ions“, damit „reactions“
+    // nicht getroffen wird) – der Whitespace gehört aber nicht in den verlinkten Begriff.
+    const lead = chosenMatch.length - chosenMatch.trimStart().length
+    const word = chosenMatch.trim()
+    const before = rest.slice(0, earliest + lead)
+    if (before) out.push({ kind: 'text', text: before })
     const entry = byName.get(chosenTerm)
-    out.push({ kind: 'term', text: chosenMatch, entry })
-    rest = rest.slice(earliest + chosenMatch.length)
+    out.push({ kind: 'term', text: word, entry })
+    rest = rest.slice(earliest + lead + word.length)
   }
   return out
 }
@@ -118,11 +141,12 @@ function Term({ word, entry }: { word: string; entry: GlossaryEntry }) {
 
 /** Rendert Lektionstext und macht Fachbegriffe antippbar (mit Erklär-Popup). */
 export default function TermText({ text }: { text: string }) {
-  const { dict, lang } = useI18n()
+  const { dict } = useI18n()
   const { glossary } = useI18nData()
-  const patterns = useMemo(() => buildPatterns(dict), [dict, lang])
+  const patterns = useMemo(() => buildPatterns(dict), [dict])
   const byName = useMemo(() => new Map(glossary.map((g) => [g.term, g])), [glossary])
-  const segments = useMemo(() => splitIntoSegments(text, patterns, byName), [text, patterns, byName])
+  const matchers = useMemo(() => buildGlossaryMatchers(byName), [byName])
+  const segments = useMemo(() => splitIntoSegments(text, patterns, matchers, byName), [text, patterns, matchers, byName])
   return (
     <>
       {segments.map((s, i) =>

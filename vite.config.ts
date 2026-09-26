@@ -15,4 +15,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Framework-Code getrennt vom App-Code ausliefern: Der Vendor-Chunk ändert
+        // sich selten und bleibt so beim Deployment neuer Inhalte im Browser-Cache.
+        manualChunks(id) {
+          if (/node_modules\/(react|react-dom|react-router|scheduler)\//.test(id)) return 'vendor'
+        },
+      },
+    },
+  },
 });
